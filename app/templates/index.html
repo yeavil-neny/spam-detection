@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detección de Spam - Proyecto universitario</title>
+  <style>
+    :root {
+      --bg: #f5f6f8;
+      --surface: #ffffff;
+      --ink: #1f2933;
+      --ink-soft: #52606d;
+      --hairline: #d9e2ec;
+      --accent: #0b5394;
+      --spam-bg: #fce8e6;
+      --spam-ink: #a93226;
+      --ham-bg: #e8f5e9;
+      --ham-ink: #1e7d32;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.6;
+    }
+    header {
+      background: var(--accent);
+      color: #ffffff;
+      padding: 28px 20px;
+      text-align: center;
+    }
+    header h1 { margin: 0 0 6px; font-size: 26px; }
+    header p { margin: 0; font-size: 14px; opacity: 0.9; }
+    main {
+      max-width: 720px;
+      margin: 32px auto;
+      padding: 0 16px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--hairline);
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    label { display: block; font-weight: 600; margin-bottom: 8px; }
+    textarea {
+      width: 100%;
+      min-height: 130px;
+      padding: 12px;
+      border: 1px solid var(--hairline);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 15px;
+      resize: vertical;
+    }
+    textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+    button {
+      margin-top: 12px;
+      background: var(--accent);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 11px 22px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: #083e73; }
+    .help { font-size: 12.5px; color: var(--ink-soft); margin-top: 8px; }
+    .verdict { padding: 16px 20px; border-radius: 8px; margin-bottom: 16px; }
+    .verdict h2 { margin: 0 0 4px; font-size: 20px; }
+    .verdict p { margin: 0; font-size: 14px; }
+    .verdict.spam { background: var(--spam-bg); color: var(--spam-ink); }
+    .verdict.nospam { background: var(--ham-bg); color: var(--ham-ink); }
+    .verdict.error { background: #fdf3d1; color: #7d6608; }
+    .detail { font-size: 13.5px; color: var(--ink-soft); }
+    meter { width: 100%; height: 14px; margin-top: 8px; }
+    .samples { margin-top: 18px; }
+    .samples p { margin: 6px 0; }
+    .samples button {
+      margin: 4px 8px 4px 0;
+      background: #eef2f7;
+      color: var(--ink);
+      border: 1px solid var(--hairline);
+      font-weight: 500;
+      padding: 7px 14px;
+      font-size: 13px;
+    }
+    .samples button:hover { background: #dfe7f1; }
+    .about { font-size: 13.5px; color: var(--ink-soft); }
+    .about code {
+      background: #eef2f7;
+      padding: 1px 5px;
+      border-radius: 4px;
+      word-break: break-all;
+    }
+    footer {
+      text-align: center;
+      font-size: 12.5px;
+      color: var(--ink-soft);
+      padding: 18px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Detección de Spam en Mensajes</h1>
+    <p>Proyecto del curso Ciberataques y Ciencia de Datos para Defensa</p>
+  </header>
+  <main>
+    <div class="card">
+      <h2>Analizar un mensaje</h2>
+      <form method="POST" action="/">
+        <label for="message">Texto del mensaje</label>
+        <textarea id="message" name="message"
+          placeholder="Escriba o pegue aquí el mensaje que desea analizar">{{ result.text if result and not result.error else '' }}</textarea>
+        <button type="submit">Clasificar con el modelo</button>
+        <p class="help">El análisis usa el modelo preentrenado multilingüe
+          Goodmotion/spam-mail-classifier, publicado en Hugging Face.</p>
+      </form>
+      <div class="samples">
+        <p>Ejemplos rápidos para probar la aplicación:</p>
+        <form method="POST" action="/"><input type="hidden" name="message" value="URGENT! You have won a 1 week FREE membership in our prizes. Call 09061701461 now"><button type="submit">Mensaje de spam típico</button></form>
+        <form method="POST" action="/"><input type="hidden" name="message" value="Hola, quedamos a las 8 frente al cine. Te aviso cuando salga de casa."><button type="submit">Mensaje normal</button></form>
+      </div>
+    </div>
+
+    {% if result %}
+      {% if result.error %}
+        <div class="card">
+          <div class="verdict error">
+            <h2>Entrada no válida</h2>
+            <p>{{ result.error }}</p>
+          </div>
+        </div>
+      {% else %}
+        <div class="card">
+          <div class="verdict {{ 'spam' if result.spam else 'nospam' }}">
+            <h2>{{ 'SPAM' if result.spam else 'NO SPAM' }}</h2>
+            <p>El modelo clasifica el mensaje como {{
+              'spam' if result.spam else 'no spam' }}.</p>
+          </div>
+          <p class="detail">Confianza del modelo: {{ '%.1f'|format(result.score * 100) }} %</p>
+          <meter value="{{ result.score }}" max="1">Confianza</meter>
+          <p class="detail">Modelo usado: <code>{{ result.model }}</code></p>
+        </div>
+      {% endif %}
+    {% endif %}
+
+    <div class="card">
+      <h2>Sobre esta aplicación</h2>
+      <p class="about">
+        La aplicación integra un modelo de clasificación de texto ya
+        entrenado, publicado por la comunidad de Hugging Face. El equipo
+        documentó el desarrollo completo de la metodología aplicada, desde
+        el análisis exploratorio del conjunto de datos hasta la evaluación
+        comparativa de los clasificadores, en el notebook del repositorio
+        (carpeta <code>notebook/</code>).
+      </p>
+      <p class="about">
+        Integrantes: Fredy Alvarez, Sebastian Orozco, Cristian Yepes,
+        Yenny Villarreal.
+      </p>
+    </div>
+  </main>
+  <footer>Proyecto académico - Detección de Spam</footer>
+</body>
+</html>
