@@ -65,7 +65,7 @@ Requirements: Python 3.11 (the exact package versions are pinned in
 
 ```bash
 # 1. Clone the repository and enter the folder
-git clone <repository-url>
+git clone https://github.com/yeavil-neny/spam-detection
 cd spam-detection
 
 # 2. Create and activate a virtual environment
